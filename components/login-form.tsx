@@ -106,12 +106,13 @@ export function LoginForm({
                   setIsLoading(true);
                   setError(null);
                   try {
+                    const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
                     const { error } = await supabase.auth.signInWithOAuth({
                       provider: "spotify",
                       
                       options: {
                          scopes: "user-read-email user-read-private streaming user-modify-playback-state user-read-playback-state",
-                        redirectTo: `http://10.178.173.29:3000/`,
+                        redirectTo: `${origin}/auth/callback`,
                       },
                     });
                     if (error) throw error;
