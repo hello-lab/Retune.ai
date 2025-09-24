@@ -112,7 +112,7 @@ export function LoginForm({
                       
                       options: {
                          scopes: "user-read-email user-read-private streaming user-modify-playback-state user-read-playback-state",
-                        redirectTo: `${origin}/auth/callback`,
+                        redirectTo: `https://bysveicfohpizaygfogc.supabase.co/auth/v1/callback`,
                       },
                     });
                     if (error) throw error;
