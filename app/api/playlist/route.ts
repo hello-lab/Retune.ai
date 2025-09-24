@@ -24,7 +24,7 @@ async function getToken() {
 // Search Spotify tracks based on moods/singers
 async function searchTracks(query, token, limit = 50, offset = 0) {
   const res = await fetch(
-    `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=${limit}&offset=${offset}`,
+    `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=${limit}`,
     {
       headers: { Authorization: `Bearer ${token}` },
     }

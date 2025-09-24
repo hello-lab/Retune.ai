@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { Search, Music, ExternalLink, Play } from "lucide-react";
 
 type Track = {
   id: string;
@@ -38,12 +39,8 @@ function formatDuration(ms: number | null | undefined) {
 /**
  * Single-file Playlists viewer component.
  *
- * Usage:
- * - Place this file in your Next.js app (e.g. components/PlaylistsViewer.tsx).
- * - Import and render: <PlaylistsViewer apiUrl="/api/pasted" />
- *
- * The component fetches the JSON shape you pasted (root.data array) and renders
- * playlists + collapsible track lists, with a filter input.
+ * This version swaps inline styles for scoped styled-jsx CSS for cleaner,
+ * responsive and consistent styling.
  */
 export default function PlaylistsViewer({ apiUrl = "/api/get-playlist" }: { apiUrl?: string }) {
   const [playlists, setPlaylists] = useState<Playlist[] | null>(null);
@@ -69,6 +66,8 @@ export default function PlaylistsViewer({ apiUrl = "/api/get-playlist" }: { apiU
         if (!mounted) return;
         const items = Array.isArray(json?.data) ? json.data : [];
         setPlaylists(items);
+        console.log(items)
+
       })
       .catch((err: any) => {
         if (!mounted) return;
@@ -78,7 +77,6 @@ export default function PlaylistsViewer({ apiUrl = "/api/get-playlist" }: { apiU
         if (!mounted) return;
         setLoading(false);
       });
-
     return () => {
       mounted = false;
     };
@@ -98,158 +96,192 @@ export default function PlaylistsViewer({ apiUrl = "/api/get-playlist" }: { apiU
       return false;
     }) ?? [];
 
-  if (loading) return <div style={{ padding: 16 }}>Loading playlists…</div>;
-  if (error) return <div style={{ padding: 16, color: "crimson" }}>Error: {error}</div>;
-  if (!normalized.length) return <div style={{ padding: 16 }}>No playlists found.</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen  p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-slate-600 text-lg">Loading playlists…</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen  p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-center h-64">
+            <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center max-w-md">
+              <div className="text-red-600 text-lg font-semibold mb-2">Error</div>
+              <p className="text-red-700">{error}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!normalized.length) {
+    return (
+      <div className="min-h-screen flex flex-1 w-[100vw] py-[20vh] p-6">
+        <div className="max-w-[90vw] mx-auto">
+          <div className="flex items-center justify-center h-64">
+            <div className="bg-white border border-slate-200 rounded-xl p-8 text-center max-w-md shadow-sm">
+              <Music className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+              <p className="text-slate-600 text-lg">No playlists found.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="py-[20vh]" style={{ padding: 16,paddingTop:"20vh", fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, Arial" }}>
-      <div style={{ marginBottom: 12 }}>
-        <input
-          aria-label="Filter playlists or tracks"
-          placeholder="Filter by playlist, track or artist..."
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "8px 10px",
-            borderRadius: 6,
-            border: "1px solid #ddd",
-            boxSizing: "border-box",
-          }}
-        />
-      </div>
+    <div className="min-h-screen  py-[12vh] p-6 font-sans">
+      <div className="w-[80vw] p-4 rounded-xl bg-primary/10 mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-[--primary] mb-2">Your Playlists</h1>
+          <p className="text-slate-600">Discover and manage your music collections</p>
+        </div>
 
-      <div style={{ display: "grid", gap: 12 }}>
-        {normalized.map((pl) => (
-          <div
-            key={pl.id}
-            style={{
-              border: "1px solid #e6e6e6",
-              borderRadius: 8,
-              padding: 12,
-              background: "var(--primary-50)",
-              width: "100vh",
-              boxShadow: "0 1px 0 rgba(0,0,0,0.02)",
-            }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 16 }}>{pl.name ?? "Untitled"}</div>
-                <div style={{ fontSize: 12, color: "#666" }}>
-                  {pl.created_at ? new Date(pl.created_at).toLocaleString() : null}
-                </div>
-                <div style={{ marginTop: 6, fontSize: 12, color: "#444" }}>
-                  {pl.json ? `${pl.json.length} track${pl.json.length === 1 ? "" : "s"}` : "no tracks"}
-                </div>
-              </div>
-
-              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <button
-                  onClick={() => toggle(pl.id)}
-                  style={{
-                    padding: "6px 10px",
-                    borderRadius: 6,
-                    border: "1px solid #ddd",
-                    background: openMap[pl.id] ? "#f3f4f6" : "#fff",
-                    cursor: "pointer",
-                  }}
-                >
-                  {openMap[pl.id] ? "Hide tracks" : "Show tracks"}
-                </button>
-                <a
-                  href={pl.spotify ?? "#"}
-                  onClick={(e) => {
-                    if (pl.spotify === "none") e.preventDefault();
-                  }}
-                  style={{ fontSize: 12, color: "#666" }}
-                >
-                  {pl.spotify && pl.spotify !== "none" ? "Spotify" : ""}
-                </a>
-              </div>
-            </div>
-
-            {openMap[pl.id] && pl.json && (
-              <div style={{ marginTop: 12 }}>
-                {pl.json.map((t) => (
-                  <div
-                    key={t.id}
-                    style={{
-                      display: "flex",
-                      gap: 12,
-                      padding: "8px 8px",
-                      alignItems: "center",
-                      borderBottom: "1px solid #f2f2f2",
-                    }}
-                  >
-                    <div style={{ width: 56, height: 56, flex: "0 0 56px" }}>
-                      {t.image ? (
-                        <img
-                          src={t.image}
-                          alt={t.name}
-                          style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 6 }}
-                        />
-                      ) : (
-                        <div
-                          style={{
-                            width: 56,
-                            height: 56,
-                            borderRadius: 6,
-                            background: "var(--primary)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: "rgba(148, 158, 212, 1)",
-                            fontSize: 12,
-                          }}
-                        >
-                          no image
-                        </div>
-                      )}
-                    </div>
-
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <div style={{ fontWeight: 600, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                          {t.name}
-                        </div>
-                        <div style={{ fontSize: 12, color: "#666", marginLeft: 12 }}>{formatDuration(t.duration_ms ?? undefined)}</div>
-                      </div>
-                      <div style={{ fontSize: 13, color: "#555", marginTop: 4 }}>
-                        {t.artist} • <span style={{ color: "#777" }}>{t.album}</span>
-                      </div>
-                      <div style={{ marginTop: 6 }}>
-                        <a
-                          href={t.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{
-                            fontSize: 12,
-                            color: "#0b5fff",
-                            textDecoration: "none",
-                            padding: "4px 8px",
-                            border: "1px solid #dbe7ff",
-                            borderRadius: 6,
-                            background: 'var(--primary-50)',
-                          }}
-                        >
-                          Open in Spotify
-                        </a>
-                        {t.preview_url && (
-                          <audio
-                            controls
-                            src={t.preview_url}
-                            style={{ marginLeft: 8, verticalAlign: "middle" }}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+        {/* Search/Filter */}
+        <div className="mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
+            <input
+              aria-label="Filter playlists or tracks"
+              placeholder="Filter by playlist, track or artist..."
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 text-sm"
+            />
           </div>
-        ))}
+        </div>
+
+        {/* Playlists List */}
+        <div className="space-y-4">
+          {normalized.map((pl) => (
+            <div 
+              key={pl.id}
+              className="bg-white/70 backdrop-blur-sm border border-slate-200/60 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-200"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-semibold text-slate-900 truncate">
+                    {pl.name ?? "Untitled"}
+                  </h3>
+                  {pl.created_at && (
+                    <p className="text-sm text-slate-500 mt-1">
+                      {new Date(pl.created_at).toLocaleString()}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-2 mt-2">
+                    <Music className="h-4 w-4 text-slate-400" />
+                    <span className="text-sm text-slate-600">
+                      {pl.json ? `${pl.json.length} track${pl.json.length === 1 ? "" : "s"}` : "no tracks"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 flex-shrink-0">
+                 
+                  {pl.spotify && pl.spotify !== "none" ? (
+                    <iframe src={pl.spotify} width="100%" height="80" frameBorder="0" allowtransparency="true" allow="encrypted-media" className="rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"></iframe>
+                  ) :  <button
+                    onClick={() => toggle(pl.id)}
+                    className={`px-4 py-2 text-sm font-medium rounded-lg border transition-all duration-200 hover:-translate-y-0.5 ${
+                      openMap[pl.id]
+                        ? "bg-blue-50 border-blue-200 text-blue-700"
+                        : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
+                    }`}
+                    aria-expanded={!!openMap[pl.id]}
+                  >
+                    {openMap[pl.id] ? "Hide tracks" : "Show tracks"}
+                  </button>}
+                </div>
+              </div>
+
+              {openMap[pl.id] && pl.json && (
+                <div className="mt-6 pt-6 border-t border-slate-200/60">
+                  <div className="space-y-3">
+                    {pl.json.map((t) => (
+<>
+
+                     { t.spotify?<div>hola</div>:
+                      <div 
+                        key={t.id}
+                        className="flex items-center gap-4 p-3 rounded-xl bg-slate-50/50 hover:bg-slate-100/50 transition-colors duration-200"
+                      >
+                        {/* Album Art */}
+                        <div className="flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
+                          {t.image ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img 
+                              src={t.image} 
+                              alt={t.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Music className="h-6 w-6 text-blue-400" />
+                          )}
+                        </div>
+
+                        {/* Track Details */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              <h4 className="font-medium text-slate-900 truncate" title={t.name}>
+                                {t.name}
+                              </h4>
+                              <p className="text-sm text-slate-600 truncate mt-1">
+                                {t.artist} <span className="text-slate-400">• {t.album}</span>
+                              </p>
+                            </div>
+                            <div className="text-xs text-slate-500 flex-shrink-0 min-w-[40px] text-right">
+                              {formatDuration(t.duration_ms ?? undefined)}
+                            </div>
+                          </div>
+
+                          {/* Track Actions */}
+                          <div className="flex items-center gap-2 mt-3 flex-wrap">
+                            <a 
+                              href={t.url} 
+                              target="_blank" 
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-md hover:bg-green-100 transition-colors duration-200"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              Spotify
+                            </a>
+                            {t.preview_url && (
+                              <div className="flex items-center gap-2">
+                                <Play className="h-3 w-3 text-slate-400" />
+                                <audio 
+                                  controls 
+                                  src={t.preview_url}
+                                  className="h-6 text-xs"
+                                  style={{ maxWidth: '200px' }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>}
+
+</>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -1,3 +1,5 @@
+"use client";
+import { useState, useEffect } from "react";
 import type { Metadata } from "next";
 // import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
@@ -12,8 +14,8 @@ import {
   UserButton,
 } from '@clerk/nextjs'
 import { ThemeSwitcher } from "@/components/theme-switcher";
-import ClientLayout from "@/components/ClientLayout";
 import Link from "next/link";
+import DotGrid from "@/components/DotGrid";
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
   : "http://localhost:3000";
@@ -30,18 +32,55 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const [spotifyToken, setSpotifyToken] = useState<string | null>(null);
+
+useEffect(() => {
+  if (!document.cookie.includes("spotify_access_token")) 
+  fetch("/api/auth/token")
+  .then(res => res.json())
+  .then((data) => {
+    if (data.spotifyAccessToken) {
+      setSpotifyToken(data.spotifyAccessToken);
+      // Persist token in a cookie; use expires/max-age if provided by the API
+      const maxAge = data.expires_in ? `; max-age=${data.expires_in}` : "";
+      const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+      document.cookie = `spotify_access_token=${encodeURIComponent(
+        data.spotifyAccessToken
+      )}; path=/; SameSite=Lax${secure}${maxAge}`;
+    }
+    
+  })
+  .catch((err) => console.error("Error fetching Spotify token:", err));
+
+
+},[]);
   return (
+
         <ClerkProvider>
 
-    <html lang="en" suppressHydrationWarning>
-      <body className="antialiased overflow-x-hidden">
+  
+      <html lang="en" suppressHydrationWarning>
+      <body className="antialiased overflow-x-hidden dotnet">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-          <ClientLayout>
+
+          <div style={{ width: '100%', height: location.pathname=='/'?'470%':'100%', position: 'absolute' }}>
+  <DotGrid
+    dotSize={2}
+    gap={15}
+    baseColor="#8c7ec5ff"
+    activeColor="#5227FF"
+    proximity={100}
+    shockRadius={250}
+    shockStrength={5}
+    resistance={750}
+    returnDuration={1.5}
+  />
+</div>
             <header className="flex fixed top-0 w-[100vw] justify-end  p-4 gap-5 h-16 z-[1000]">
           <GlassSurface
   displace={0.5}
@@ -104,8 +143,8 @@ export default function RootLayout({
             </div></div>
             </GlassSurface>
           </header>
-          {children}
-          </ClientLayout>
+          <div className="z-[11] relative">
+          {children}</div>
         </ThemeProvider>
          
       </body>

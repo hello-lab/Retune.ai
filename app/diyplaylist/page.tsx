@@ -164,6 +164,45 @@ export default function PlaylistMaker() {
     window.location.href = '/api/auth/spotify';
   };
 
+ const exportToSpotify1 = async () => {
+    if (!playlistName.trim()) {
+      setError('Please enter a playlist name');
+      return;
+    }
+
+    setExportLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/create-playlist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: playlistName,
+          description: `Generated from mood/artist: ${query}`,
+          tracks: tracks,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create playlist');
+      }
+
+      // Success! Open the playlist in Spotify
+      location.href = '/playback?url=https://open.spotify.com/embed/playlist/'+data.playlist.id;
+      setShowExportModal(false);
+      setError('');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   const exportToSpotify = async () => {
     if (!playlistName.trim()) {
       setError('Please enter a playlist name');
@@ -239,9 +278,9 @@ export default function PlaylistMaker() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-8">
+    <div className="min-h-screen py-[12vh] border-radius-xl  p-4">
+      <div className=" bg-gradient-to-br  rounded-xl from-purple-900/50 via-blue-900/50 to-indigo-900/50 p-5 mx-auto max-w-[90vw]">
+        <div className="text-center mb-8 ">
           <h1 className="text-4xl font-bold text-white mb-4">
             🎵 Spotify Playlist Maker
           </h1>
@@ -297,10 +336,10 @@ export default function PlaylistMaker() {
                   Export to Spotify
                 </button>
                 <button
-                  onClick={exportToJSON}
+                  onClick={exportToSpotify1}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
                 >
-                  Export JSON
+                  Export & Listen
                 </button>
               </div>
             </div>
@@ -335,7 +374,7 @@ export default function PlaylistMaker() {
 
             <div className="space-y-4">
               {tracks.map((track, index) => (
-                <div
+              <div>  <div
                   key={track.id}
                   className={`flex items-center gap-4 p-4 rounded-lg transition-colors ${
                     currentTrack?.id === track.id
@@ -381,16 +420,13 @@ export default function PlaylistMaker() {
                         {currentTrack?.id === track.id && isPlaying ? 'Pause' : 'Play'}
                       </button>
                     )}
-                    <a
-                      href={track.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded-md transition-colors"
-                    >
-                      Spotify
-                    </a>
+                    
                   </div>
                 </div>
+                <iframe
+                className='w-full h-[80px] rounded-xl'
+                      src={`https://open.spotify.com/embed/track/${track.id}`}
+                     /></div>
               ))}
             </div>
           </div>

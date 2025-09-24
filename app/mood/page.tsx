@@ -70,8 +70,8 @@ useEffect(() => {
 
 }, [chatJson]);
   return (
-    <main className="h-[85vh] flex flex-col justify-center w-[90vw] items-center ">
-      <div className="flex-1 w-full flex flex-col  p-4 items-center h-[75vh]">
+    <main className="h-[85vh] flex flex-col justify-center w-[90vw] items-center py-[10vh] z-15 relative mx-auto">
+      <div className="flex-1 w-full flex flex-col  p-4 py-[8vh] items-center h-[75vh]">
       
         <h1 className="text-4xl font-bold text-center text-primary mb-8">Mood Detector</h1>
         <div className="flex-1 flex flex-col bg-gradient-to-r bg-gray-800/60 w-full gap-1 max-w-5xl p-2 rounded-xl bg-blend-lighten ">

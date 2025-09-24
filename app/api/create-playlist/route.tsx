@@ -79,6 +79,13 @@ export async function POST(request) {
     // Add tracks to playlist
     const trackUris = tracks.map(track => `spotify:track:${track.id}`);
     await addTracksToPlaylist(accessToken.value, playlist.id, trackUris);
+    // Optionally, save playlist info to Supabase
+    const { error } = await supabase.from('playlists').insert({
+      userid: user.id,
+      playlistid: playlist.id,
+      name: playlist.name,
+      spotify: `https://open.spotify.com/embed/playlist/${playlist.id}`,
+    });
 
     return Response.json({
       playlist: {

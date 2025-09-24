@@ -328,31 +328,9 @@ const DotGrid: React.FC<DotGridProps> = ({
   }, [maxSpeed, speedTrigger, proximity, resistance, returnDuration, shockRadius, shockStrength]);
 
   return (
-    <section 
-      className={`p-4 flex items-center justify-center h-full w-full relative ${className}`} 
-      style={{ 
-        ...style,
-        willChange: 'transform',
-        transform: 'translateZ(0)', // Force hardware acceleration
-        backfaceVisibility: 'hidden'
-      }}
-    >
-      <div 
-        ref={wrapperRef} 
-        className="w-full h-full relative"
-        style={{
-          willChange: 'transform',
-          transform: 'translateZ(0)'
-        }}
-      >
-        <canvas 
-          ref={canvasRef} 
-          className="absolute inset-0 w-full h-full pointer-events-none"
-          style={{
-            willChange: 'transform',
-            transform: 'translateZ(0)'
-          }}
-        />
+    <section className={`p-4 flex items-center justify-center h-full w-full relative ${className}`} style={style}>
+      <div ref={wrapperRef} className="w-full h-full relative">
+        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
       </div>
     </section>
   );
