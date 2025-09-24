@@ -14,7 +14,18 @@ export default function PlaylistMaker() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   
+  // New web player states
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [isMuted, setIsMuted] = useState(false);
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(-1);
+  const [isShuffled, setIsShuffled] = useState(false);
+  const [isRepeat, setIsRepeat] = useState(false);
+  const [showWebPlayer, setShowWebPlayer] = useState(false);
+  
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const progressRef = useRef<HTMLInputElement>(null);
   const { isSignedIn, user } = useUser();
 
   useEffect(() => {
@@ -25,6 +36,38 @@ export default function PlaylistMaker() {
       }
     };
   }, []);
+
+  // Audio event listeners
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const updateTime = () => setCurrentTime(audio.currentTime);
+    const updateDuration = () => setDuration(audio.duration);
+    
+    audio.addEventListener('timeupdate', updateTime);
+    audio.addEventListener('loadedmetadata', updateDuration);
+    audio.addEventListener('ended', handleTrackEnd);
+
+    return () => {
+      audio.removeEventListener('timeupdate', updateTime);
+      audio.removeEventListener('loadedmetadata', updateDuration);
+      audio.removeEventListener('ended', handleTrackEnd);
+    };
+  }, [currentTrack]);
+
+  const handleTrackEnd = () => {
+    if (isRepeat) {
+      // Repeat current track
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play();
+      }
+    } else {
+      // Play next track
+      playNext();
+    }
+  };
 
   const getCookie = (name: string) => {
     if (typeof document === 'undefined') return null;
@@ -107,7 +150,7 @@ export default function PlaylistMaker() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const playTrack = (track: any) => {
+  const playTrack = (track: any, index?: number) => {
     if (!track.preview_url) {
       setError('No preview available for this track');
       return;
@@ -128,6 +171,7 @@ export default function PlaylistMaker() {
 
     // Play new track
     audioRef.current = new Audio(track.preview_url);
+    audioRef.current.volume = isMuted ? 0 : volume;
     audioRef.current.play().catch(e => {
       setError('Failed to play audio preview');
       setIsPlaying(false);
@@ -135,13 +179,9 @@ export default function PlaylistMaker() {
     });
     
     setCurrentTrack(track);
+    setCurrentTrackIndex(index !== undefined ? index : tracks.findIndex(t => t.id === track.id));
     setIsPlaying(true);
-
-    // Handle track end
-    audioRef.current.onended = () => {
-      setIsPlaying(false);
-      setCurrentTrack(null);
-    };
+    setShowWebPlayer(true);
 
     // Handle errors
     audioRef.current.onerror = () => {
@@ -151,6 +191,70 @@ export default function PlaylistMaker() {
     };
   };
 
+  const togglePlayPause = () => {
+    if (!audioRef.current || !currentTrack) return;
+
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play().catch(e => {
+        setError('Failed to resume playback');
+      });
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  const playNext = () => {
+    if (tracks.length === 0 || currentTrackIndex === -1) return;
+
+    let nextIndex;
+    if (isShuffled) {
+      nextIndex = Math.floor(Math.random() * tracks.length);
+    } else {
+      nextIndex = (currentTrackIndex + 1) % tracks.length;
+    }
+
+    playTrack(tracks[nextIndex], nextIndex);
+  };
+
+  const playPrevious = () => {
+    if (tracks.length === 0 || currentTrackIndex === -1) return;
+
+    let prevIndex;
+    if (isShuffled) {
+      prevIndex = Math.floor(Math.random() * tracks.length);
+    } else {
+      prevIndex = currentTrackIndex === 0 ? tracks.length - 1 : currentTrackIndex - 1;
+    }
+
+    playTrack(tracks[prevIndex], prevIndex);
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const seekTime = (parseFloat(e.target.value) / 100) * duration;
+    audio.currentTime = seekTime;
+    setCurrentTime(seekTime);
+  };
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseFloat(e.target.value) / 100;
+    setVolume(newVolume);
+    if (audioRef.current) {
+      audioRef.current.volume = isMuted ? 0 : newVolume;
+    }
+  };
+
+  const toggleMute = () => {
+    if (audioRef.current) {
+      const newMuted = !isMuted;
+      setIsMuted(newMuted);
+      audioRef.current.volume = newMuted ? 0 : volume;
+    }
+  };
+
   const stopPlayback = () => {
     if (audioRef.current) {
       audioRef.current.pause();
@@ -158,6 +262,10 @@ export default function PlaylistMaker() {
     }
     setIsPlaying(false);
     setCurrentTrack(null);
+    setCurrentTrackIndex(-1);
+    setShowWebPlayer(false);
+    setCurrentTime(0);
+    setDuration(0);
   };
 
   const handleSpotifyLogin = () => {
@@ -238,6 +346,13 @@ export default function PlaylistMaker() {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  const formatTime = (seconds: number) => {
+    if (isNaN(seconds)) return '0:00';
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
   return (
     <div className="min-h-screen py-[15vh] p-4">
       <div>
@@ -250,8 +365,6 @@ export default function PlaylistMaker() {
             Generate playlists based on moods, artists, or genres
           </p>
         </div>
-
-       
 
         {error && (
           <div className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-200">
@@ -287,34 +400,6 @@ export default function PlaylistMaker() {
                 </button>
               </div>
             </div>
-
-            {isPlaying && currentTrack && (
-              <div className="mb-4 p-3 bg-purple-600/20 rounded-lg border border-purple-500/50">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    {currentTrack.image && (
-                      <img
-                        src={currentTrack.image}
-                        alt={`${currentTrack.name} album cover`}
-                        className="w-10 h-10 rounded object-cover"
-                      />
-                    )}
-                    <div>
-                      <p className="text-white font-medium">Now Playing:</p>
-                      <p className="text-purple-200 text-sm">
-                        {currentTrack.name} by {currentTrack.artist}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={stopPlayback}
-                    className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded-md transition-colors"
-                  >
-                    Stop
-                  </button>
-                </div>
-              </div>
-            )}
 
             <div className="space-y-4">
               {tracks.map((track, index) => (
@@ -354,7 +439,7 @@ export default function PlaylistMaker() {
                   <div className="flex gap-2">
                     {track.preview_url && (
                       <button
-                        onClick={() => playTrack(track)}
+                        onClick={() => playTrack(track, index)}
                         className={`px-3 py-1 text-white text-sm rounded-md transition-colors ${
                           currentTrack?.id === track.id && isPlaying
                             ? 'bg-red-600 hover:bg-red-700'
@@ -386,6 +471,147 @@ export default function PlaylistMaker() {
           </div>
         )}
 
+        {/* Web Player */}
+        {showWebPlayer && currentTrack && (
+          <div className="fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-sm border-t border-white/20 p-4 z-40">
+            <div className="max-w-6xl mx-auto">
+              {/* Progress Bar */}
+              <div className="mb-3">
+                <input
+                  ref={progressRef}
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={duration ? (currentTime / duration) * 100 : 0}
+                  onChange={handleSeek}
+                  className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                />
+                <div className="flex justify-between text-xs text-gray-400 mt-1">
+                  <span>{formatTime(currentTime)}</span>
+                  <span>{formatTime(duration)}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                {/* Track Info */}
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  {currentTrack.image && (
+                    <img
+                      src={currentTrack.image}
+                      alt={`${currentTrack.name} album cover`}
+                      className="w-12 h-12 rounded-md object-cover"
+                    />
+                  )}
+                  <div className="min-w-0">
+                    <h4 className="text-white font-medium truncate">
+                      {currentTrack.name}
+                    </h4>
+                    <p className="text-gray-400 text-sm truncate">
+                      {currentTrack.artist}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Playback Controls */}
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => setIsShuffled(!isShuffled)}
+                    className={`p-2 rounded-full transition-colors ${
+                      isShuffled ? 'text-purple-500' : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M5 5a1 1 0 011-1h3.586l1.707-1.707A1 1 0 0113 3v3a1 1 0 11-2 0V4.414L9.586 5.828A2 2 0 008.172 6H6a1 1 0 01-1-1zM2 12a1 1 0 011-1h3.586l1.707-1.707A1 1 0 0110 10v3a1 1 0 11-2 0v-1.586L6.586 12.828A2 2 0 005.172 13H3a1 1 0 01-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+
+                  <button
+                    onClick={playPrevious}
+                    className="p-2 text-white hover:text-purple-300 transition-colors"
+                  >
+                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M8.445 14.832A1 1 0 0010 14v-2.798l5.445 3.63A1 1 0 0017 14V6a1 1 0 00-1.555-.832L10 8.798V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4z"/>
+                    </svg>
+                  </button>
+
+                  <button
+                    onClick={togglePlayPause}
+                    className="p-3 bg-white text-black rounded-full hover:bg-gray-200 transition-colors"
+                  >
+                    {isPlaying ? (
+                      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd"/>
+                      </svg>
+                    ) : (
+                      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd"/>
+                      </svg>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={playNext}
+                    className="p-2 text-white hover:text-purple-300 transition-colors"
+                  >
+                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M4.555 5.168A1 1 0 003 6v8a1 1 0 001.555.832L10 11.202V14a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4A1 1 0 0010 6v2.798l-5.445-3.63z"/>
+                    </svg>
+                  </button>
+
+                  <button
+                    onClick={() => setIsRepeat(!isRepeat)}
+                    className={`p-2 rounded-full transition-colors ${
+                      isRepeat ? 'text-purple-500' : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd"/>
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Volume Controls */}
+                <div className="flex items-center gap-2 flex-1 justify-end">
+                  <button
+                    onClick={toggleMute}
+                    className="p-2 text-gray-400 hover:text-white transition-colors"
+                  >
+                    {isMuted || volume === 0 ? (
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM12.293 7.293a1 1 0 011.414 0L15 8.586l1.293-1.293a1 1 0 111.414 1.414L16.414 10l1.293 1.293a1 1 0 01-1.414 1.414L15 11.414l-1.293 1.293a1 1 0 01-1.414-1.414L13.586 10l-1.293-1.293a1 1 0 010-1.414z" clipRule="evenodd"/>
+                      </svg>
+                    ) : volume < 0.5 ? (
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14 8a1 1 0 10-2 0v4a1 1 0 102 0V8z" clipRule="evenodd"/>
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM15.657 6.343a1 1 0 010 1.414A4.98 4.98 0 0117 10a4.98 4.98 0 01-1.343 2.243 1 1 0 11-1.414-1.414A2.98 2.98 0 0015 10a2.98 2.98 0 00-.757-1.829 1 1 0 011.414-1.414z" clipRule="evenodd"/>
+                      </svg>
+                    )}
+                  </button>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={isMuted ? 0 : volume * 100}
+                    onChange={handleVolumeChange}
+                    className="w-20 h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                  />
+                  <button
+                    onClick={stopPlayback}
+                    className="p-2 text-gray-400 hover:text-red-400 transition-colors ml-2"
+                  >
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clipRule="evenodd"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Export Modal */}
         {showExportModal && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
@@ -405,8 +631,6 @@ export default function PlaylistMaker() {
                 />
               </div>
 
-             
-
               <div className="flex gap-3">
                 <button
                   onClick={exportToSpotify}
@@ -425,6 +649,30 @@ export default function PlaylistMaker() {
             </div>
           </div>
         )}
+
+        {/* Custom CSS for sliders */}
+        <style jsx>{`
+          .slider {
+            background: linear-gradient(to right, #8b5cf6 0%, #8b5cf6 ${currentTime && duration ? (currentTime / duration) * 100 : 0}%, #374151 ${currentTime && duration ? (currentTime / duration) * 100 : 0}%, #374151 100%);
+          }
+          .slider::-webkit-slider-thumb {
+            appearance: none;
+            height: 15px;
+            width: 15px;
+            border-radius: 50%;
+            background: #8b5cf6;
+            cursor: pointer;
+            border: 2px solid #ffffff;
+          }
+          .slider::-moz-range-thumb {
+            height: 15px;
+            width: 15px;
+            border-radius: 50%;
+            background: #8b5cf6;
+            cursor: pointer;
+            border: 2px solid #ffffff;
+          }
+        `}</style>
       </div>
     </div></div>
   );

@@ -20,7 +20,6 @@ export interface GlassSurfaceProps {
   xChannel?: 'R' | 'G' | 'B';
   yChannel?: 'R' | 'G' | 'B';
   mixBlendMode?:
-    | 'normal'
     | 'multiply'
     | 'screen'
     | 'overlay'

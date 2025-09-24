@@ -66,29 +66,24 @@ export default function RootLayout({
       </Link>
       <nav className="flex items-center gap-3">
         <Link
-          href="/browse"
+          href="/diyplaylist"
           className="   hover:underline   transition-colors duration-150"
         >
           Browse
         </Link>
         <Link
-          href="/playlists"
+          href="/history"
           className=" hover:underline   transition-colors duration-150"
         >
           Playlists
         </Link>
         <Link
-          href="/favorites"
+          href="/mood"
           className=" hidden sm:inline hover:underline    transition-colors duration-150"
         >
-          Favorites
+          Generate
         </Link>
-        <Link
-          href="/about"
-          className=" hidden md:inline  hover:underline    transition-colors duration-500"
-        >
-          About
-        </Link>
+       
       </nav>
     </div>
   </div>
