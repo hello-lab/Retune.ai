@@ -11,6 +11,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRef, useEffect } from "react";
 import { useAuth ,useUser} from "@clerk/nextjs";
+import { redirect } from "next/dist/server/api-utils";
 export default  function Home() {  
  
   // Protect the route by checking if the user is signed in
@@ -19,7 +20,7 @@ export default  function Home() {
   // Simple chat-like JSON structure
   const [userMessage, setUserMessage] = useState("");
   const [chatJson, setChatJson] = useState([
-    { user: "AI", message: { response: "Hello, how are you?" ,detected:[]} },
+    { user: "AI", message: { response: "Hello, talk about how you are feeling, when you are satisfied click generate" ,detected:[]} },
   
   ]);
 
@@ -49,7 +50,13 @@ setUserMessage("")
 
 }
 const chatContainerRef = useRef<HTMLDivElement>(null);
-
+function generate(){
+  const inference = chatJson.slice().reverse().find(c => c.user === "AI")?.message?.detected;
+  if (inference) {
+    document.cookie = `inference=${encodeURIComponent(JSON.stringify(inference))}; path=/;`;
+  }
+  window.location.href = "/playlistmaker";
+}
 
 useEffect(() => {
   if (chatContainerRef.current) {
@@ -63,15 +70,15 @@ useEffect(() => {
 
 }, [chatJson]);
   return (
-    <main className="h-[85vh] flex flex-col items-center ">
+    <main className="h-[85vh] flex flex-col justify-center w-[90vw] items-center ">
       <div className="flex-1 w-full flex flex-col  p-4 items-center h-[75vh]">
       
         <h1 className="text-4xl font-bold text-center text-primary mb-8">Mood Detector</h1>
-        <div className="flex-1 flex flex-col bg-gradient-to-r bg-gray-800 w-full gap-1 max-w-5xl p-2 rounded-xl bg-blend-lighten ">
+        <div className="flex-1 flex flex-col bg-gradient-to-r bg-gray-800/60 w-full gap-1 max-w-5xl p-2 rounded-xl bg-blend-lighten ">
 
 <div
   ref={chatContainerRef}
-  className="flex flex-col gap-4 overflow-y-scroll h-[60vh] w-full p-4 rounded-lg bg-gray-900"
+  className="flex flex-col gap-4 overflow-y-scroll h-[60vh] w-full p-4 rounded-lg bg-gray-900/50"
 >
   {
     chatJson.map((chat, idx) => (
@@ -102,6 +109,12 @@ useEffect(() => {
     className="ml-2 px-6 py-4 rounded-lg bg-primary text-secondary font-semibold hover:scale-90 transition"
   >
     Send
+  </button>
+   <button
+    onClick={generate}
+    className="ml-2 px-6 py-4 rounded-lg bg-primary text-secondary font-semibold hover:scale-90 transition"
+  >
+    Generate
   </button>
 </form>
         </div>

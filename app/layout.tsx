@@ -1,7 +1,7 @@
-"use client";
 import type { Metadata } from "next";
 // import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import GlassSurface  from "@/components/GlassSurface";
 import "./globals.css";
 import {
   ClerkProvider,
@@ -11,14 +11,8 @@ import {
   SignedOut,
   UserButton,
 } from '@clerk/nextjs'
-import { hasEnvVars } from "@/lib/utils";
-import { DeployButton } from "@/components/deploy-button";
-import { EnvVarWarning } from "@/components/env-var-warning";
-import { AuthButton } from "@/components/auth-button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
-import { Hero } from "@/components/hero";
-import { useUser } from "@clerk/nextjs";
-import { useEffect, useState } from "react";
+import ClientLayout from "@/components/ClientLayout";
 import Link from "next/link";
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -35,45 +29,71 @@ export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
-}>) 
- 
-
-{
-  const [spotifyToken, setSpotifyToken] = useState<string | null>(null);
-
-useEffect(() => {
-  if (!document.cookie.includes("spotify_access_token")) 
-  fetch("/api/auth/token")
-  .then(res => res.json())
-  .then((data) => {
-    if (data.spotifyAccessToken) {
-      setSpotifyToken(data.spotifyAccessToken);
-      // Persist token in a cookie; use expires/max-age if provided by the API
-      const maxAge = data.expires_in ? `; max-age=${data.expires_in}` : "";
-      const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
-      document.cookie = `spotify_access_token=${encodeURIComponent(
-        data.spotifyAccessToken
-      )}; path=/; SameSite=Lax${secure}${maxAge}`;
-    }
-    
-  })
-  .catch((err) => console.error("Error fetching Spotify token:", err));
-
-
-},[]);
+}>) {
   return (
         <ClerkProvider>
 
     <html lang="en" suppressHydrationWarning>
-      <body className="antialiased">
+      <body className="antialiased overflow-x-hidden">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-        
-                <header className="flex justify-end items-center p-4 gap-4 h-16">
+          <ClientLayout>
+            <header className="flex fixed top-0 w-[100vw] justify-end  p-4 gap-5 h-16 z-[1000]">
+          <GlassSurface
+  displace={0.5}
+  distortionScale={-180}
+  redOffset={5}
+  greenOffset={15}
+  blueOffset={25}
+  brightness={50}
+  opacity={0.93}
+  backgroundOpacity={0.1}
+  mixBlendMode="screen"
+  className="px-4 gap-4 w-[100vw] py-2 rounded-full "
+>
+  <div className="flex gap-4 items-center justify-center">
+  <div>
+    <div className="flex items-center gap-4 text-xl">
+      <Link
+        href="/"
+        className=" font-semibold hover:underline  transition-colors duration-150"
+      >
+        Home
+      </Link>
+      <nav className="flex items-center gap-3">
+        <Link
+          href="/browse"
+          className="   hover:underline   transition-colors duration-150"
+        >
+          Browse
+        </Link>
+        <Link
+          href="/playlists"
+          className=" hover:underline   transition-colors duration-150"
+        >
+          Playlists
+        </Link>
+        <Link
+          href="/favorites"
+          className=" hidden sm:inline hover:underline    transition-colors duration-150"
+        >
+          Favorites
+        </Link>
+        <Link
+          href="/about"
+          className=" hidden md:inline  hover:underline    transition-colors duration-500"
+        >
+          About
+        </Link>
+      </nav>
+    </div>
+  </div>
+  <div className="h-[20vh] relative  bg-[gray] w-[1px]"></div>
+  <div className="flex items-center gap-4  ">
             <SignedOut>
               <SignInButton />
               <SignUpButton>
@@ -85,8 +105,12 @@ useEffect(() => {
             <SignedIn>
               <UserButton />
             </SignedIn>
+            <ThemeSwitcher />
+            </div></div>
+            </GlassSurface>
           </header>
           {children}
+          </ClientLayout>
         </ThemeProvider>
          
       </body>

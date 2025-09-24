@@ -239,8 +239,7 @@ export default function PlaylistMaker() {
   };
 
   return (
-    <div className="min-h-screen py-[15vh] p-4">
-      <div>
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-white mb-4">
@@ -251,7 +250,25 @@ export default function PlaylistMaker() {
           </p>
         </div>
 
-       
+        <form onSubmit={generatePlaylist} className="mb-8">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Enter mood, artist, or genre (e.g., 'happy', 'Kendrick Lamar', 'jazz')"
+              className="flex-1 px-4 py-3 rounded-lg bg-white/10 text-white placeholder-gray-400 border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              disabled={loading}
+            />
+            <button
+              type="submit"
+              disabled={loading || !query.trim()}
+              className="px-8 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white font-semibold rounded-lg transition-colors"
+            >
+              {loading ? 'Generating...' : 'Generate Playlist'}
+            </button>
+          </div>
+        </form>
 
         {error && (
           <div className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-200">
@@ -426,6 +443,6 @@ export default function PlaylistMaker() {
           </div>
         )}
       </div>
-    </div></div>
+    </div>
   );
 }
