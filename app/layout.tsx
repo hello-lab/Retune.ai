@@ -33,8 +33,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const [spotifyToken, setSpotifyToken] = useState<string | null>(null);
-
+const [height, setHeight] = useState<string | null>(null);
 useEffect(() => {
+  setHeight(location.pathname)
   if (!document.cookie.includes("spotify_access_token")) 
   fetch("/api/auth/token")
   .then(res => res.json())
@@ -68,7 +69,7 @@ useEffect(() => {
           disableTransitionOnChange
         >
 
-          <div style={{ width: '100%', height: location.pathname=='/'?'470%':'100%', position: 'absolute' }}>
+          <div style={{ width: '100%', height: height=='/'?'470%':'100%', position: 'absolute' }}>
   <DotGrid
     dotSize={2}
     gap={15}
