@@ -159,7 +159,7 @@ export default function PlaylistsViewer({ apiUrl = "/api/get-playlist" }: { apiU
               placeholder="Filter by playlist, track or artist..."
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 text-sm"
+              className="w-full pl-10 pr-4 py-3 bg-secondary text-primary border border-slate-200 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 text-sm"
             />
           </div>
         </div>
