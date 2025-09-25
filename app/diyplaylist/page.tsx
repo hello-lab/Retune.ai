@@ -375,7 +375,7 @@ export default function PlaylistMaker() {
             <div className="space-y-4">
               {tracks.map((track, index) => (
               <div>  <div
-                  key={track.id}
+                              key={`${track.id}-${index}`}
                   className={`flex items-center gap-4 p-4 rounded-lg transition-colors ${
                     currentTrack?.id === track.id
                       ? 'bg-purple-500/20 border border-purple-500/50'

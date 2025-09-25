@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { use, useEffect, useRef, useState } from 'react';
 import { JSX } from 'react';
 
 class Pixel {
@@ -180,8 +180,8 @@ export default function PixelCard({
   const pixelsRef = useRef<Pixel[]>([]);
   const animationRef = useRef<ReturnType<typeof requestAnimationFrame> | null>(null);
   const timePreviousRef = useRef(performance.now());
-  const reducedMotion = useRef(window.matchMedia('(prefers-reduced-motion: reduce)').matches).current;
-
+  const [reducedMotion, setReducedMotion] = useState(false);
+  useEffect(() => {setReducedMotion(window.matchMedia('(prefers-reduced-motion: reduce)').matches);}, []);
   const variantCfg: VariantConfig = VARIANTS[variant] || VARIANTS.default;
   const finalGap = gap ?? variantCfg.gap;
   const finalSpeed = speed ?? variantCfg.speed;
