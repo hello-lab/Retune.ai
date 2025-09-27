@@ -10,11 +10,11 @@
   <img width="1920" height="1032" alt="Screenshot 2025-09-25 232455" src="https://github.com/user-attachments/assets/b8643f0c-a299-499f-8ff8-f245a30ee098" />
 
   <p>
-    <a href="#features"><strong>Features</strong></a> ·
-    <a href="#installation"><strong>Installation</strong></a> ·
-    <a href="#usage"><strong>Usage</strong></a> ·
-    <a href="#api"><strong>API</strong></a> ·
-    <a href="#deployment"><strong>Deploy</strong></a>
+    <a href="#-features"><strong>Features</strong></a> ·
+    <a href="#-installation"><strong>Installation</strong></a> ·
+    <a href="#-usage"><strong>Usage</strong></a> ·
+    <a href="#-api"><strong>API</strong></a> ·
+    <a href="#-deployment"><strong>Deploy</strong></a>
   </p>
 </div>
 
